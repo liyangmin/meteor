@@ -1178,6 +1178,71 @@ Tinytest.add("liveui - basic tag contents", function(test) {
 });
 
 
+Tinytest.add("liveui - events", function(test) {
+  var event_buf = [];
+  var eventmap = function(/* arguments */) {
+    var events = {};
+    _.each(arguments, function(evt_sel) {
+      events[evt_sel] = function() {
+        event_buf.push(evt_sel);
+      };
+    });
+    return events;
+  };
+  var getid = function(id) {
+    return document.getElementById(id);
+  };
+
+  var div;
+
+  // clicking on a div at top level
+  event_buf.length = 0;
+  div = OnscreenDiv(Meteor.ui.render(function() {
+    return '<div id="foozy">Foo</div>';
+  }, {events: eventmap("click")}));
+  simulateEvent(getid("foozy"), 'click');
+  test.equal(event_buf, ['click']);
+  div.kill();
+  Meteor.flush();
+
+  // selector that specifies a top-level div
+  // FAILS in 0.3.3
+  event_buf.length = 0;
+  div = OnscreenDiv(Meteor.ui.render(function() {
+    return '<div id="foozy">Foo</div>';
+  }, {events: eventmap("click div")}));
+  simulateEvent(getid("foozy"), 'click');
+  test.equal(event_buf, ['click div']);
+  div.kill();
+  Meteor.flush();
+
+  // selector that specifies a second-level span
+  event_buf.length = 0;
+  div = OnscreenDiv(Meteor.ui.render(function() {
+    return '<div id="foozy"><span>Foo</span></div>';
+  }, {events: eventmap("click span")}));
+  simulateEvent(getid("foozy").firstChild, 'click');
+  test.equal(event_buf, ['click span']);
+  div.kill();
+  Meteor.flush();
+
+  // replaced top-level elements still have event handlers
+  // FAILS in 0.3.3
+
+  // XXXXXXXXXXXXX write this test!
+  event_buf.length = 0;
+  div = OnscreenDiv(Meteor.ui.render(function() {
+    return '<div id="foozy"><span>Foo</span></div>';
+  }, {events: eventmap("click span")}));
+  simulateEvent(getid("foozy").firstChild, 'click');
+  test.equal(event_buf, ['click span']);
+  div.kill();
+  Meteor.flush();
+
+
+});
+
+
 // TO TEST:
 // - events
 //   - attaching events in render, chunk, listChunk item, listChunk else
